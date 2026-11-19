@@ -1,0 +1,30 @@
+## Interface: 16001
+## Title: ReReagent
+## Notes: Counts the reagents your class spells use, from Ankhs to Rune of Teleportation, and restocks them at the vendor and from the bank.
+## Notes-ruRU: Считает реагенты для заклинаний вашего класса, от анхов до рун телепортации, и пополняет запас у торговца и из банка.
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\ReReagent\Media\Icon
+## SavedVariables: ReReagentDB
+## SavedVariablesPerCharacter: ReReagentCharDB
+## AddonCompartmentFunc: ReReagent_OnAddonCompartmentClick
+
+Libs\LibJagerenteDock\LibJagerenteDock.lua
+Core\Init.lua
+Core\Locales.lua
+Data\Reagents.lua
+Core\Database.lua
+Core\Catalog.lua
+Core\Inventory.lua
+Core\Merchant.lua
+Core\Bank.lua
+UI\Theme.lua
+UI\Widgets.lua
+UI\TestMode.lua
+UI\Bar.lua
+UI\SidePanel.lua
+UI\MerchantPanel.lua
+UI\BankPanel.lua
+UI\MinimapButton.lua
+UI\About.lua
+UI\Options.lua
+Core\Commands.lua
