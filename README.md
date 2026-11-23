@@ -2,7 +2,7 @@
 
 # ReReagent: Class Reagents Restock
 
-Counts the reagents your class spells use in WoW Forever and restocks them at the vendor and from the bank. A druid sees Ironwood Seed for Rebirth, a mage sees Rune of Teleportation and Arcane Powder, a rogue sees Flash Powder and the vials and dust for poisons.
+Counts the reagents your class spells use in WoW Forever and restocks them at the vendor and the bank. A druid sees Ironwood Seed for Rebirth, a mage sees Rune of Teleportation and Arcane Powder, a rogue sees Flash Powder and the vials and dust for poisons.
 
 ![The reagent panel with three seeds for Rebirth: 20, 19 in amber below the stock and 0 in red](https://raw.githubusercontent.com/Jagerente/ReReagent/main/branding/screenshots/bar.png)
 
@@ -31,32 +31,32 @@ When you talk to a vendor who sells your reagents, a panel next to the window li
 ![The vendor panel next to a reagent vendor with Ashwood Seed to buy](https://raw.githubusercontent.com/Jagerente/ReReagent/main/branding/screenshots/vendor.png)
 
 - **Buy all** buys every row, one stack at a time. If you can't pay for all of it, the row says how many you can pay for.
-- Turn on "Buy right away" to skip the click.
+- Turn on "Buy when the vendor window opens" to skip the click.
 
 ## Bank
 
-When you open the bank, a panel next to it lists the reagents your bags are short of. **Take all** moves them into your bags, splitting stacks so you get exactly the stock. Reagents for lower ranks you don't track stay in the bank. Turn on "Take it right away" to skip the click.
+When you open the bank, a panel next to it lists the reagents your bags are short of. **Take all** moves them into your bags, splitting stacks so you get exactly the stock. Reagents for lower ranks you don't track stay in the bank. Turn on "Take when the bank opens" to skip the click.
 
 ![The bank panel next to the EllesmereUI bank window with 20 Ashwood Seed to take into your bags](https://raw.githubusercontent.com/Jagerente/ReReagent/main/branding/screenshots/bank.png)
 
-Both panels sit to the right of their window and follow it, also when a bag addon replaces the bank window. They share the space with the panels of the other Re addons. On the Vendor and Bank tabs you can attach the panel to the window or to another addon's panel, to the right, left, below or above. Drag a panel by any empty spot to shift it, middle-click to put it back.
+Both panels sit to the right of their window and follow it, also when a bag addon replaces the bank window. They share the space with the panels of the other Re addons. On the Vendor and Bank tabs you can attach the panel to the window or to another addon's panel, to the right, left, below or above. Drag a panel to move it; right-click it to open or close its settings, middle-click to put it back.
 
 ## Settings
 
 `/reagents` (or `/rereagent`) opens the settings:
 
-- **Reagents** has "Only spells you know", "Lower ranks too" and a block for each reagent with its switch and how many to keep.
-- **Panel** sets when the panel shows, reagents you are out of, icon size, spacing, row or column, the title line, the count, lock, both backgrounds, the minimap button and the language.
-- **Vendor** has "Shopping list at the vendor", "Buy right away", "Count reagents in the bank" and where the panel sits.
-- **Bank** has "Take reagents from the bank", "Take it right away" and where the panel sits.
+- The Reagents tab has "Only spells you know", "Lower ranks too" and a block for each reagent with its switch and how many to keep.
+- The Panel tab sets when the panel shows up, reagents you are out of, icon size, spacing, row or column, the title line, the count, the lock, both backgrounds, the minimap button and the language.
+- The Vendor tab turns the vendor panel on or off and sets buying as soon as the vendor window opens, counting the bank and where the panel sits.
+- The Bank tab turns the bank panel on or off and sets taking reagents as soon as the bank opens and where the panel sits.
 
 ![The Reagents tab with the two switches, Ashwood Seed for Rebirth rank 3 and its stock of 20](https://raw.githubusercontent.com/Jagerente/ReReagent/main/branding/screenshots/options.png)
 
 ## Other Re addons
 
-Panels like this one for the other things you carry, with the same restock at the vendor and the bank:
+Panels like this one for the other things you carry:
 
-- [ReScroll](https://www.curseforge.com/projects/1812247) shows which scroll buffs you are missing, applies them with one button and restocks scrolls ([GitHub](https://github.com/Jagerente/ReScroll)).
-- [RePotion](https://www.curseforge.com/projects/1815534) gives you one button for health potions and one for mana potions, and restocks them ([GitHub](https://github.com/Jagerente/RePotion)).
-- [ReFood](https://www.curseforge.com/projects/1816338) eats and drinks the strongest food you carry, reminds you of Well Fed and restocks food at the vendor ([GitHub](https://github.com/Jagerente/ReFood)).
-- [ReWeapon](https://www.curseforge.com/projects/1816469) puts sharpening stones, oils and poisons on your weapons with one button per hand and restocks them ([GitHub](https://github.com/Jagerente/ReWeapon)).
+- [ReScroll](https://www.curseforge.com/projects/1812247) shows which scroll buffs you are missing, applies them with one button and restocks scrolls at the auction house and the bank ([GitHub](https://github.com/Jagerente/ReScroll)).
+- [RePotion](https://www.curseforge.com/projects/1815534) gives you one button per potion type (health, mana, Free Action) and restocks them at the auction house and the bank ([GitHub](https://github.com/Jagerente/RePotion)).
+- [ReFood](https://www.curseforge.com/projects/1816338) eats and drinks the strongest food you carry, reminds you of Well Fed and restocks food at the vendor, the auction house and the bank ([GitHub](https://github.com/Jagerente/ReFood)).
+- [ReWeapon](https://www.curseforge.com/projects/1816469) puts sharpening stones, oils and poisons on your weapons with one button per hand and restocks them at the vendor, the auction house and the bank ([GitHub](https://github.com/Jagerente/ReWeapon)).

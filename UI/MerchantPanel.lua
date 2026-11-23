@@ -55,7 +55,7 @@ local function Create()
         empty = "VENDOR_EMPTY",
         onAction = function() Merchant.BuyAll() end,
         toggles = {
-            { key = "merchantAuto", label = "VENDOR_AUTO", desc = "VENDOR_AUTO_DESC" },
+            { key = "merchantAuto", label = "VENDOR_AUTO" },
             { key = "countBank", label = "COUNT_BANK", desc = "COUNT_BANK_DESC" },
         },
         hosts = HOSTS,

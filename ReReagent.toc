@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: ReReagent
-## Notes: Counts the reagents your class spells use, from Ankhs to Rune of Teleportation, and restocks them at the vendor and from the bank.
+## Notes: Counts the reagents your class spells use, from Ankhs to Rune of Teleportation, and restocks them at the vendor and the bank.
 ## Notes-ruRU: Считает реагенты для заклинаний вашего класса, от анхов до рун телепортации, и пополняет запас у торговца и из банка.
-## Version: 1.0.0
+## Version: 1.1.0
 ## IconTexture: Interface\AddOns\ReReagent\Media\Icon
 ## SavedVariables: ReReagentDB
 ## SavedVariablesPerCharacter: ReReagentCharDB

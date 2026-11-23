@@ -49,7 +49,7 @@ local function Create()
         title = "BANK_TITLE",
         empty = "BANK_DONE",
         onAction = function() Bank.Take() end,
-        toggles = { { key = "bankAuto", label = "BANK_AUTO", desc = "BANK_AUTO_DESC" } },
+        toggles = { { key = "bankAuto", label = "BANK_AUTO" } },
         hosts = HOSTS,
         slot = "bank",
         offset = { x = "bankX", y = "bankY" },
