@@ -9,10 +9,6 @@ local function SetActive(active)
     ns.Fire("TEST_MODE_CHANGED", active)
 end
 
-function TestMode.Start()
-    SetActive(true)
-end
-
 function TestMode.Stop()
     SetActive(false)
 end

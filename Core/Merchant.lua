@@ -20,6 +20,8 @@ local pool = {}
 local goods = {}
 local job
 local stepTimer
+local windowOpen = false
+local buyOnOpen = false
 
 local function Changed()
     ns.Fire("MERCHANT_CHANGED")
@@ -187,20 +189,22 @@ function Merchant.HasPurchase()
     return false
 end
 
-local function OnShow()
-    if not ns.db.merchant then return end
+local function ShowPanel(runAuto)
     Merchant.open = true
+    buyOnOpen = buyOnOpen or runAuto
     ns.Schedule("merchantOpen", OPEN_DELAY, function()
+        local buy = buyOnOpen
+        buyOnOpen = false
         if not Merchant.open then return end
         Inventory.Recount()
         Refresh()
         if not Merchant.sells then return end
         ns.Fire("MERCHANT_SHOWN", true)
-        if ns.db.merchantAuto then Merchant.BuyAll() end
+        if buy and ns.db.merchantAuto then Merchant.BuyAll() end
     end)
 end
 
-local function OnClosed()
+local function HidePanel()
     if not Merchant.open then return end
     Merchant.open = false
     CancelTimer()
@@ -208,6 +212,25 @@ local function OnClosed()
     Merchant.buying = false
     wipe(entries)
     ns.Fire("MERCHANT_SHOWN", false)
+end
+
+local function OnShow()
+    windowOpen = true
+    if ns.db.merchant then ShowPanel(true) end
+end
+
+local function OnClosed()
+    windowOpen = false
+    buyOnOpen = false
+    HidePanel()
+end
+
+local function SyncPanel()
+    if not ns.db.merchant then
+        HidePanel()
+    elseif windowOpen and not Merchant.open then
+        ShowPanel(false)
+    end
 end
 
 local function RefreshIfIdle()
@@ -223,12 +246,8 @@ ns.Listen("INVENTORY_CHANGED", RefreshIfIdle)
 ns.Listen("REAGENTS_CHANGED", RefreshIfIdle)
 ns.Listen("STOCK_CHANGED", RefreshIfIdle)
 ns.Listen("SETTING_CHANGED", function(key)
-    if not Merchant.open then return end
-    if key == "merchant" and not ns.db.merchant then
-        OnClosed()
-    else
-        RefreshIfIdle()
-    end
+    if key == nil or key == "merchant" then SyncPanel() end
+    RefreshIfIdle()
 end)
 
 ns.Listen("LOGIN", function()

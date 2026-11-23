@@ -67,5 +67,4 @@ function ns.ResetSettings()
     wipe(ns.charDB)
     ApplyDefaults(ns.charDB, CHAR_DEFAULTS)
     ns.Fire("SETTING_CHANGED")
-    ns.Fire("STOCK_CHANGED")
 end

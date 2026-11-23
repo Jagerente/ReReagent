@@ -57,6 +57,7 @@ end
 
 local function AddStockLines(entry)
     local stock = Inventory.Stock(entry)
+    if stock.target == 0 then return end
     local count = UI.Colored(stock.have, CountColor(entry, stock.have, C.good))
     AddRow(L.TIP_STOCK, string.format(L.TIP_STOCK_VALUE, count, stock.target), C.muted, C.muted)
     if stock.bank > 0 then AddRow(L.TIP_IN_BANK, stock.bank, C.muted, C.text) end
@@ -137,7 +138,7 @@ end
 
 local function OnMouseUp(_, mouseButton)
     if mouseButton == "RightButton" then
-        ns.Options.Toggle("reagents")
+        ns.Options.Toggle()
     elseif mouseButton == "MiddleButton" and not ns.db.locked then
         Bar.ResetPosition()
     end
@@ -178,7 +179,6 @@ end
 local function CreateButton()
     local button = CreateFrame("Button", nil, bar)
     button.UpdateTooltip = ShowTooltip
-    button:RegisterForClicks("AnyUp")
     button:Hide()
     CreateArt(button)
     button:SetScript("OnMouseUp", OnMouseUp)

@@ -219,7 +219,6 @@ function PanelMixin:PaintRows(entries, create, paint)
         paint(row, fresh)
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", 0, -y)
-        row.divider:SetShown(index > 1)
         y = y + row:GetHeight() + ROW_GAP
         if fresh then FadeInRow(row) end
         row:Show()
@@ -342,10 +341,6 @@ function SidePanel.NewRow(panel, onButton)
     local row = CreateFrame("Frame", nil, panel.list)
     row:SetSize(SidePanel.ROW_WIDTH, HEAD_HEIGHT)
     row.fade = {}
-
-    row.divider = Hairline(row)
-    row.divider:SetPoint("TOPLEFT", 0, ROW_GAP / 2)
-    row.divider:SetPoint("TOPRIGHT", 0, ROW_GAP / 2)
 
     local head = CreateFrame("Frame", nil, row)
     head:SetPoint("TOPLEFT")
