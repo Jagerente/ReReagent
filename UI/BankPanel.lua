@@ -10,12 +10,8 @@ local HOSTS = { "EUI_BankFrame", "BankFrame" }
 
 local panel
 
-local function RowItem(entry)
-    return entry.item
-end
-
 local function CreateRow(owner)
-    local row = SidePanel.NewRow(owner, Bank.Take, RowItem)
+    local row = SidePanel.NewRow(owner, Bank.Take)
     row.price:Hide()
     return row
 end
@@ -36,12 +32,8 @@ local function PaintRow(row)
 end
 
 local function Paint()
-    local entries = Bank.entries
     panel.subtitle:SetText(L.BANK_SUBTITLE)
-    panel:PaintRows(entries, CreateRow, PaintRow)
-
-    local total = 0
-    for _, entry in ipairs(entries) do total = total + entry.take end
+    panel:PaintRows(Bank.entries, CreateRow, PaintRow)
     if Bank.noSpace then
         panel.footerText:SetText(L.BANK_NO_SPACE)
         panel.footerText:SetTextColor(unpack(C.bad))
@@ -49,7 +41,7 @@ local function Paint()
         panel.footerText:SetText(string.format(L.BANK_FREE, Bank.FreeSlots()))
         panel.footerText:SetTextColor(unpack(C.muted))
     end
-    panel:SetAction(Bank.moving and L.BANK_MOVING or L.BANK_TAKE_ALL, total > 0 and not Bank.moving)
+    panel:SetAction(Bank.moving and L.BANK_MOVING or L.BANK_TAKE_ALL, #Bank.entries > 0 and not Bank.moving)
 end
 
 local function Create()
@@ -57,7 +49,6 @@ local function Create()
         title = "BANK_TITLE",
         empty = "BANK_DONE",
         onAction = function() Bank.Take() end,
-        actionHint = "BANK_TAKE_ALL_DESC",
         toggles = { { key = "bankAuto", label = "BANK_AUTO", desc = "BANK_AUTO_DESC" } },
         hosts = HOSTS,
         slot = "bank",
@@ -76,13 +67,10 @@ ns.Listen("BANK_SHOWN", function(open)
     panel:Open()
 end)
 
-ns.Listen("BANK_CHANGED", function()
-    if panel and panel:IsShown() then Paint() end
-end)
-
 local function RepaintIfShown()
     if panel and panel:IsShown() then Paint() end
 end
 
+ns.Listen("BANK_CHANGED", RepaintIfShown)
 ns.Listen("LOCALE_CHANGED", RepaintIfShown)
 ns.Listen("NAMES_CHANGED", RepaintIfShown)

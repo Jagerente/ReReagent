@@ -7,7 +7,6 @@ UI.COLORS = {
     window = { 0.078, 0.076, 0.072, 0.98 },
     control = { 0.149, 0.145, 0.137, 1 },
     controlHover = { 0.196, 0.190, 0.180, 1 },
-    selected = { 0.176, 0.170, 0.160, 1 },
     text = { 0.957, 0.949, 0.929, 1 },
     muted = { 0.808, 0.788, 0.749, 1 },
     faint = { 0.659, 0.639, 0.600, 1 },
@@ -119,6 +118,17 @@ function UI.LerpColor(from, to, t, out)
     return out
 end
 
+local COLOR_CODE = "|cff%02x%02x%02x%s|r"
+local COLOR_BYTE = 255
+
+local function ColorByte(channel)
+    return math.floor(channel * COLOR_BYTE + 0.5)
+end
+
+function UI.Colored(text, color)
+    return string.format(COLOR_CODE, ColorByte(color[1]), ColorByte(color[2]), ColorByte(color[3]), text)
+end
+
 local function EaseOutCubic(t)
     local inv = 1 - t
     return 1 - inv * inv * inv
@@ -192,11 +202,6 @@ function UI.Tween(owner, to, duration, apply, done)
     tweenDriver:Show()
 end
 
-function UI.StopTween(owner)
-    tweens[owner] = nil
-    incoming[owner] = nil
-end
-
 function UI.SnapTween(owner, value, apply)
     tweens[owner] = nil
     incoming[owner] = nil
@@ -216,8 +221,10 @@ end
 
 UI.ADDON_ICON = "Interface\\AddOns\\" .. ns.ADDON .. "\\Media\\Icon"
 
+local ICON_PIXELS = 64
 local GLYPH_LEFT, GLYPH_RIGHT, GLYPH_TOP, GLYPH_BOTTOM = 6 / 64, 58 / 64, 6 / 64, 58 / 64
 local GLYPH_ASPECT = (GLYPH_RIGHT - GLYPH_LEFT) / (GLYPH_BOTTOM - GLYPH_TOP)
+local INLINE_TEXTURE = "|T%s:%d:%d:0:0:%d:%d:%d:%d:%d:%d|t"
 
 function UI.VerticalAnchor(owner)
     local _, y = owner:GetCenter()
@@ -232,6 +239,11 @@ function UI.AddonGlyph(parent, height, layer)
     texture:SetTexCoord(GLYPH_LEFT, GLYPH_RIGHT, GLYPH_TOP, GLYPH_BOTTOM)
     texture:SetSize(height * GLYPH_ASPECT, height)
     return texture
+end
+
+function UI.InlineGlyph(height)
+    return string.format(INLINE_TEXTURE, UI.ADDON_ICON, height, math.floor(height * GLYPH_ASPECT + 0.5), ICON_PIXELS, ICON_PIXELS,
+        GLYPH_LEFT * ICON_PIXELS, GLYPH_RIGHT * ICON_PIXELS, GLYPH_TOP * ICON_PIXELS, GLYPH_BOTTOM * ICON_PIXELS)
 end
 
 local CLASS_ICON_FILE = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"

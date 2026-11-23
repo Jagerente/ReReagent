@@ -11,6 +11,9 @@ local Inventory = ns.Inventory
 local Bar = { buttons = {} }
 ns.Bar = Bar
 
+local TIP_GLYPH_HEIGHT = 14
+local TIP_GLYPH = UI.InlineGlyph(TIP_GLYPH_HEIGHT)
+local TIP_GAP = " "
 local PAD = 4
 local HEADER_HEIGHT, HEADER_GAP = 14, 5
 local HEADER_GLYPH_HEIGHT, HEADER_GLYPH_GAP = 11, 5
@@ -34,27 +37,52 @@ local barFade = {}
 local moving = false
 local inCombat = false
 
+local function CountColor(entry, have, fullColor)
+    if have == 0 then return C.bad end
+    if have < Catalog.StockTarget(entry) then return C.warn end
+    return fullColor or C.text
+end
+
 local function AddLine(text, color)
     GameTooltip:AddLine(text, color[1], color[2], color[3], true)
 end
 
-local function ShowTooltip(button)
-    local entry = button.entry
-    local stock = Inventory.Stock(entry)
-    GameTooltip:SetOwner(button, UI.VerticalAnchor(button))
-    GameTooltip:SetText(Catalog.Name(entry), C.text[1], C.text[2], C.text[3])
-    AddLine(string.format(L.TIP_STOCK, stock.have, stock.target), stock.have > 0 and C.muted or C.bad)
-    if stock.bank > 0 then AddLine(string.format(L.TIP_IN_BANK, stock.bank), C.muted) end
-    AddLine(string.format(L.TIP_USED_BY, Catalog.UsedBy(entry)), C.muted)
-    if not entry.forTop then AddLine(L.TIP_LOWER_ONLY, C.muted) end
-    AddLine(L.TIP_HINT, C.muted)
-    GameTooltip:Show()
+local function AddRow(left, right, leftColor, rightColor)
+    GameTooltip:AddDoubleLine(left, right, leftColor[1], leftColor[2], leftColor[3], rightColor[1], rightColor[2], rightColor[3])
 end
 
-local function CountColor(entry, have)
-    if have == 0 then return C.bad end
-    if have < Catalog.StockTarget(entry) then return C.warn end
-    return C.text
+local function AddGap()
+    GameTooltip:AddLine(TIP_GAP)
+end
+
+local function AddStockLines(entry)
+    local stock = Inventory.Stock(entry)
+    local count = UI.Colored(stock.have, CountColor(entry, stock.have, C.good))
+    AddRow(L.TIP_STOCK, string.format(L.TIP_STOCK_VALUE, count, stock.target), C.muted, C.muted)
+    if stock.bank > 0 then AddRow(L.TIP_IN_BANK, stock.bank, C.muted, C.text) end
+end
+
+local function AddSpellLines(entry)
+    AddLine(string.format(L.TIP_USED_BY, UI.Colored(Catalog.UsedBy(entry), C.text)), C.muted)
+    if not entry.forTop then AddLine(L.TIP_LOWER_ONLY, C.faint) end
+end
+
+local function AddHintLines()
+    AddGap()
+    if not ns.db.locked then AddRow(L.TIP_DRAG, L.TIP_MOVE, C.accent, C.text) end
+    AddRow(L.TIP_RIGHT_CLICK, L.TIP_SETTINGS, C.accent, C.text)
+end
+
+local function ShowTooltip(button)
+    local entry = button.entry
+    GameTooltip:SetOwner(button, UI.VerticalAnchor(button))
+    GameTooltip:SetItemByID(entry.item)
+    AddGap()
+    AddLine(TIP_GLYPH .. " " .. ns.TITLE, C.accent)
+    AddStockLines(entry)
+    AddSpellLines(entry)
+    AddHintLines()
+    GameTooltip:Show()
 end
 
 local function PaintButton(button)
@@ -96,7 +124,6 @@ end
 local function StartMoving()
     if ns.db.locked then return false end
     moving = true
-    GameTooltip:Hide()
     holder:Raise()
     holder:StartMoving()
 end
@@ -150,6 +177,7 @@ end
 
 local function CreateButton()
     local button = CreateFrame("Button", nil, bar)
+    button.UpdateTooltip = ShowTooltip
     button:RegisterForClicks("AnyUp")
     button:Hide()
     CreateArt(button)
@@ -225,12 +253,8 @@ local function PlaceHolder()
     holder:SetPoint(position.point, UIParent, position.point, position.x, position.y)
 end
 
-local function Previewing()
-    return ns.TestMode.active or ns.Options.IsOpen()
-end
-
 local function WantsButton(entry)
-    if Previewing() then return true end
+    if ns.TestMode.active then return true end
     if ns.db.visibility == "short" and not Inventory.IsShort(entry) then return false end
     return ns.db.showEmpty or Inventory.Count(entry.item) > 0
 end
@@ -279,7 +303,7 @@ end
 
 local function WantsShown()
     if not ns.db.enabled or #visible == 0 then return false end
-    if Previewing() then return true end
+    if ns.TestMode.active or ns.Options.IsOpen() then return true end
     local visibility = ns.db.visibility
     if visibility == "never" then return false end
     if visibility == "combat" then return inCombat end

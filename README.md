@@ -39,16 +39,16 @@ When you open the bank, a panel next to it lists the reagents your bags are shor
 
 ![The bank panel next to the EllesmereUI bank window with 20 Ashwood Seed to take into your bags](https://raw.githubusercontent.com/Jagerente/ReReagent/main/branding/screenshots/bank.png)
 
-Both panels sit to the right of their window and follow it, also when a bag addon replaces the bank window. They share the space with the panels of ReScroll, RePotion and ReFood. On the Vendor and Bank tabs you can attach the panel to the window or to another addon's panel, to the right, left, below or above.
+Both panels sit to the right of their window and follow it, also when a bag addon replaces the bank window. They share the space with the panels of the other Re addons. On the Vendor and Bank tabs you can attach the panel to the window or to another addon's panel, to the right, left, below or above. Drag a panel by any empty spot to shift it, middle-click to put it back.
 
 ## Settings
 
 `/reagents` (or `/rereagent`) opens the settings:
 
-- **Reagents:** only spells you know, lower ranks, each reagent on or off and how many to keep
-- **Panel:** when it shows up, reagents you are out of, icon size, spacing, row or column, the title line, the count, lock, the background of the panel and of the vendor and bank panels, minimap button, language
-- **Vendor:** the vendor list, buying right away, counting the bank, where the panel sits
-- **Bank:** the bank panel, taking reagents right away, where the panel sits
+- **Reagents** has "Only spells you know", "Lower ranks too" and a block for each reagent with its switch and how many to keep.
+- **Panel** sets when the panel shows, reagents you are out of, icon size, spacing, row or column, the title line, the count, lock, both backgrounds, the minimap button and the language.
+- **Vendor** has "Shopping list at the vendor", "Buy right away", "Count reagents in the bank" and where the panel sits.
+- **Bank** has "Take reagents from the bank", "Take it right away" and where the panel sits.
 
 ![The Reagents tab with the two switches, Ashwood Seed for Rebirth rank 3 and its stock of 20](https://raw.githubusercontent.com/Jagerente/ReReagent/main/branding/screenshots/options.png)
 

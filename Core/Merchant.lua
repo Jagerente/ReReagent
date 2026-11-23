@@ -74,7 +74,6 @@ local function MakeEntry(reagent, good)
     local entry = pool[reagent.item] or {}
     pool[reagent.item] = entry
     entry.reagent, entry.item, entry.good = reagent, reagent.item, good
-    entry.unitPrice = good.price / good.step
     entry.need, entry.have, entry.bank, entry.target = stock.need, stock.have, stock.bank, stock.target
     Purchase(entry, math.max(stock.need, 0))
     Settle(entry)

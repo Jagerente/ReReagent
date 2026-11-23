@@ -17,7 +17,6 @@ local BUTTON_HEIGHT, BUTTON_PAD, GROUP_GAP = 22, 10, 2
 local CHOICE_MARK_WIDTH = 2
 local THUMB_SIZE, THUMB_HOVER_SIZE, RAIL_HEIGHT = 10, 12, 3
 local ROW_HOVER = { 1, 1, 1, 0.035 }
-local LOCKED_ALPHA = 0.5
 local SCROLLBAR_INSET = 2
 
 local bound = {}
@@ -65,13 +64,9 @@ function Widgets.HoverFill(frame, texture, base, hover)
     local function Apply(_, t)
         texture:SetColorTexture(unpack(UI.LerpColor(state.base, state.hover, t, scratchColor)))
     end
-    function state.Repaint()
-        Apply(state, state.tweenValue or 0)
-    end
     UI.SnapTween(state, 0, Apply)
     frame:HookScript("OnEnter", function() UI.Tween(state, 1, HOVER_TIME, Apply) end)
     frame:HookScript("OnLeave", function() UI.Tween(state, 0, HOVER_TIME, Apply) end)
-    return state
 end
 
 local function RowHover(row)
@@ -122,10 +117,10 @@ function Widgets.Heading(parent, width, key)
     return frame
 end
 
-function Widgets.Paragraph(parent, width, key, size)
+function Widgets.Paragraph(parent, width, key)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetWidth(width)
-    local text = UI.Text(frame, size or T.label, C.muted)
+    local text = UI.Text(frame, T.label, C.muted)
     text:SetPoint("TOPLEFT")
     text:SetWidth(width)
     text:SetWordWrap(true)
@@ -154,15 +149,9 @@ function Widgets.Button(parent, key, onClick, style, width)
     button:SetHeight(BUTTON_HEIGHT)
     local fill = button:CreateTexture(nil, "BACKGROUND")
     fill:SetAllPoints()
-    local hover = Widgets.HoverFill(button, fill, look.fill, look.hover)
+    Widgets.HoverFill(button, fill, look.fill, look.hover)
     button.text = UI.BoldText(button, T.label, look.text)
     button.text:SetPoint("CENTER")
-    function button:SetStyle(name)
-        local chosen = BUTTON_STYLES[name]
-        hover.base, hover.hover = chosen.fill, chosen.hover
-        hover.Repaint()
-        self.text:SetTextColor(unpack(chosen.text))
-    end
     function button:Fit()
         self:SetWidth(width or math.ceil(self.text:GetStringWidth() + BUTTON_PAD * 2))
     end
@@ -236,34 +225,27 @@ function Widgets.Toggle(parent, width, opts)
     label:SetPoint("RIGHT", switch, "LEFT", -12, 0)
     label:SetJustifyH("LEFT")
     Widgets.Bind(label, opts.label)
-    local function IsLocked()
-        return opts.locked ~= nil and opts.locked()
-    end
     row:SetScript("OnClick", function()
-        if IsLocked() then return end
         opts.set(not opts.get())
         Widgets.SetSwitch(switch, opts.get(), true)
     end)
     row:HookScript("OnEnter", function(self)
-        local locked = IsLocked()
-        Widgets.SetSwitchHover(switch, not locked)
-        ShowHint(self, locked and opts.lockedDesc or opts.desc)
+        Widgets.SetSwitchHover(switch, true)
+        ShowHint(self, opts.desc)
     end)
     row:HookScript("OnLeave", function(self)
         Widgets.SetSwitchHover(switch, false)
         HideHint(self)
     end)
     function row:Refresh(animate)
-        local locked = IsLocked()
-        switch:SetAlpha(locked and LOCKED_ALPHA or 1)
-        label:SetTextColor(unpack(locked and C.muted or C.text))
-        local on = opts.get()
-        if locked then on = opts.lockedState end
-        Widgets.SetSwitch(switch, on, animate)
+        Widgets.SetSwitch(switch, opts.get(), animate)
     end
     row:Refresh()
     return row
 end
+
+local SLIDER_HEIGHT = 34
+local SLIDER_BOX_WIDTH, SLIDER_BOX_HEIGHT, SLIDER_BOX_GAP = 40, 18, 8
 
 local function Snap(value, opts)
     value = math.floor((value - opts.min) / opts.step + 0.5) * opts.step + opts.min
@@ -276,17 +258,20 @@ local function FormatValue(value, opts)
 end
 
 function Widgets.Slider(parent, width, opts)
+    local compact = opts.label == nil
     local row = CreateFrame("Frame", nil, parent)
-    row:SetSize(width, 34)
-    local label = UI.Text(row, T.label, C.muted)
-    label:SetPoint("TOPLEFT", 0, -2)
-    label:SetPoint("RIGHT", -42, 0)
-    label:SetJustifyH("LEFT")
-    Widgets.Bind(label, opts.label)
+    row:SetSize(width, compact and SLIDER_BOX_HEIGHT or SLIDER_HEIGHT)
+    if not compact then
+        local label = UI.Text(row, T.label, C.muted)
+        label:SetPoint("TOPLEFT", 0, -2)
+        label:SetPoint("RIGHT", -(SLIDER_BOX_WIDTH + 2), 0)
+        label:SetJustifyH("LEFT")
+        Widgets.Bind(label, opts.label)
+    end
 
     local box = CreateFrame("EditBox", nil, row)
-    box:SetSize(40, 18)
-    box:SetPoint("TOPRIGHT", 0, 1)
+    box:SetSize(SLIDER_BOX_WIDTH, SLIDER_BOX_HEIGHT)
+    box:SetPoint("TOPRIGHT", 0, compact and 0 or 1)
     box:SetAutoFocus(false)
     box:SetJustifyH("RIGHT")
     box:SetTextInsets(3, 3, 0, 0)
@@ -296,8 +281,13 @@ function Widgets.Slider(parent, width, opts)
     boxFill:SetAlpha(0)
 
     local track = CreateFrame("Frame", nil, row)
-    track:SetPoint("BOTTOMLEFT", THUMB_HOVER_SIZE / 2, 0)
-    track:SetPoint("BOTTOMRIGHT", -THUMB_HOVER_SIZE / 2, 0)
+    if compact then
+        track:SetPoint("LEFT", THUMB_HOVER_SIZE / 2, 0)
+        track:SetPoint("RIGHT", box, "LEFT", -(THUMB_HOVER_SIZE / 2 + SLIDER_BOX_GAP), 0)
+    else
+        track:SetPoint("BOTTOMLEFT", THUMB_HOVER_SIZE / 2, 0)
+        track:SetPoint("BOTTOMRIGHT", -THUMB_HOVER_SIZE / 2, 0)
+    end
     track:SetHeight(12)
     track:EnableMouse(true)
     local rail = track:CreateTexture(nil, "ARTWORK")
@@ -322,7 +312,7 @@ function Widgets.Slider(parent, width, opts)
     local function Paint(value)
         local ratio = (value - opts.min) / (opts.max - opts.min)
         local span = track:GetWidth()
-        if span <= 0 then span = width - THUMB_HOVER_SIZE end
+        if span <= 0 then span = width - THUMB_HOVER_SIZE - (compact and SLIDER_BOX_WIDTH + SLIDER_BOX_GAP or 0) end
         fill:SetWidth(math.max(0.001, span * ratio))
         thumb:SetPoint("CENTER", track, "LEFT", span * ratio, 0)
         if not box:HasFocus() then
@@ -472,16 +462,13 @@ function Widgets.Choices(parent, width, opts)
         top = 18
     end
     local buttons = {}
-    local columns = opts.columns or 1
-    local cellWidth = (width - (columns - 1) * GROUP_GAP) / columns
 
     local function Choice(index)
         local button = buttons[index]
         if button then return button end
-        local column, line = (index - 1) % columns, math.floor((index - 1) / columns)
         button = CreateFrame("Button", nil, frame)
-        button:SetSize(cellWidth, BUTTON_HEIGHT)
-        button:SetPoint("TOPLEFT", column * (cellWidth + GROUP_GAP), -(top + line * (BUTTON_HEIGHT + GROUP_GAP)))
+        button:SetSize(width, BUTTON_HEIGHT)
+        button:SetPoint("TOPLEFT", 0, -(top + (index - 1) * (BUTTON_HEIGHT + GROUP_GAP)))
         local fill = button:CreateTexture(nil, "BACKGROUND")
         fill:SetAllPoints()
         Widgets.HoverFill(button, fill, C.control, C.controlHover)
@@ -498,13 +485,6 @@ function Widgets.Choices(parent, width, opts)
             opts.set(self.item.value)
             frame:Refresh()
         end)
-        button:HookScript("OnEnter", function(self)
-            if not self.item.hint then return end
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(self.item.hint, 1, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
-        button:HookScript("OnLeave", HideHint)
         buttons[index] = button
         return button
     end
@@ -524,8 +504,7 @@ function Widgets.Choices(parent, width, opts)
         for index = #items + 1, #buttons do
             buttons[index]:Hide()
         end
-        local lines = math.ceil(#items / columns)
-        self:SetHeight(top + lines * (BUTTON_HEIGHT + GROUP_GAP) - GROUP_GAP)
+        self:SetHeight(top + #items * (BUTTON_HEIGHT + GROUP_GAP) - GROUP_GAP)
     end
 
     Widgets.OnLocale(function() frame:Refresh() end)

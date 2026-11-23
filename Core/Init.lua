@@ -4,18 +4,6 @@ ns.ADDON = ADDON
 ns.TITLE = "ReReagent"
 ns.VERSION = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "dev"
 
-local issecretvalue = issecretvalue
-
-function ns.IsSecret(value)
-    return issecretvalue ~= nil and issecretvalue(value) == true
-end
-
-local PRINT_PREFIX = "|cffe6b248" .. ns.TITLE .. "|r: "
-
-function ns.Print(message)
-    print(PRINT_PREFIX .. message)
-end
-
 local function Dispatch(handlers)
     return function(_, event, ...)
         local list = handlers[event]
@@ -38,25 +26,6 @@ function ns.RegisterEvent(event, handler)
     end
     list[#list + 1] = handler
     return true
-end
-
-local unitFrames = {}
-
-function ns.RegisterUnitEvent(event, unit, handler)
-    local frame = unitFrames[unit]
-    if not frame then
-        frame = CreateFrame("Frame")
-        frame.handlers = {}
-        frame:SetScript("OnEvent", Dispatch(frame.handlers))
-        unitFrames[unit] = frame
-    end
-    local list = frame.handlers[event]
-    if not list then
-        list = {}
-        frame.handlers[event] = list
-        frame:RegisterUnitEvent(event, unit)
-    end
-    list[#list + 1] = handler
 end
 
 local listeners = {}

@@ -151,8 +151,6 @@ local function CreateFooter(panel, opts)
     if opts.onAction then
         panel.action = W.Button(panel, nil, opts.onAction, "primary")
         panel.action:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-        panel.action:HookScript("OnEnter", function(self) W.ShowHint(self, opts.actionHint) end)
-        panel.action:HookScript("OnLeave", W.HideHint)
     end
     panel.footerText = UI.Text(panel, T.body, C.text)
     panel.footerText:SetPoint("LEFT", panel, "BOTTOMLEFT", PAD, PAD + BUTTON_HEIGHT / 2)
@@ -183,10 +181,6 @@ function PanelMixin:Offset()
     return ns.db[offset.x], ns.db[offset.y]
 end
 
-function PanelMixin:Dock()
-    ns.Dock:Layout()
-end
-
 function PanelMixin:Layer()
     local host = ns.Dock:Host(self)
     if not host then
@@ -203,7 +197,7 @@ function PanelMixin:Open()
     end
     self:Layer()
     UI.FadeIn(self, FADE_TIME)
-    self:Dock()
+    ns.Dock:Layout()
 end
 
 function PanelMixin:ListTop()
@@ -269,7 +263,7 @@ function PanelMixin:EndDrag()
         ns.Set(self.offset.y, y + Round(self:GetTop() - self.dragTop))
     end
     self.dragLeft, self.dragTop = nil, nil
-    self:Dock()
+    ns.Dock:Layout()
 end
 
 local function MakeMovable(panel, opts)
@@ -284,7 +278,7 @@ local function MakeMovable(panel, opts)
         offset = function() return panel:Offset() end,
     })
     ns.Listen("SETTING_CHANGED", function(key)
-        if panel:IsShown() and (key == nil or key == offset.x or key == offset.y) then panel:Dock() end
+        if panel:IsShown() and (key == nil or key == offset.x or key == offset.y) then ns.Dock:Layout() end
     end)
 end
 
@@ -339,16 +333,14 @@ ns.Listen("SETTING_CHANGED", function(key)
 end)
 
 local function ShowRowTooltip(head)
-    local row = head:GetParent()
     GameTooltip:SetOwner(head, "ANCHOR_RIGHT")
-    GameTooltip:SetItemByID(row.tooltipItem(row.entry))
+    GameTooltip:SetItemByID(head:GetParent().entry.item)
     GameTooltip:Show()
 end
 
-function SidePanel.NewRow(panel, onButton, tooltipItem)
+function SidePanel.NewRow(panel, onButton)
     local row = CreateFrame("Frame", nil, panel.list)
     row:SetSize(SidePanel.ROW_WIDTH, HEAD_HEIGHT)
-    row.tooltipItem = tooltipItem
     row.fade = {}
 
     row.divider = Hairline(row)

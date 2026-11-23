@@ -62,7 +62,7 @@ local function MarkRanks(family)
     end
 end
 
-function Catalog.IsWanted(rank)
+local function IsWanted(rank)
     return rank.available and (rank.top or ns.db.lowerRanks)
 end
 
@@ -70,7 +70,7 @@ local function CollectWanted(entry)
     wipe(entry.wanted)
     entry.forTop = false
     for _, rank in ipairs(entry.ranks) do
-        if Catalog.IsWanted(rank) then
+        if IsWanted(rank) then
             entry.wanted[#entry.wanted + 1] = rank
             if rank.top then entry.forTop = true end
         end
@@ -115,7 +115,6 @@ local function Rebuild()
     if changed then ns.Fire("REAGENTS_CHANGED") end
     ns.Fire("RANKS_CHANGED")
 end
-Catalog.Rebuild = Rebuild
 
 function Catalog.HasReagents()
     return #reagents > 0
@@ -150,9 +149,9 @@ function Catalog.RankName(rank)
     return string.format(ns.L.SPELL_RANK, name, rank.number)
 end
 
-function Catalog.UsedBy(entry, ranks)
+function Catalog.UsedBy(entry)
     local names = {}
-    for index, rank in ipairs(ranks or entry.wanted) do
+    for index, rank in ipairs(entry.wanted) do
         names[index] = Catalog.RankName(rank)
     end
     return table.concat(names, ", ")

@@ -6,6 +6,8 @@ local C = UI.COLORS
 local T = UI.TEXT
 local W = ns.Widgets
 local Catalog = ns.Catalog
+local Inventory = ns.Inventory
+local SidePanel = ns.SidePanel
 
 local Options = {}
 ns.Options = Options
@@ -20,12 +22,14 @@ local PAGE_WIDTH = WIDTH - MARGIN * 2
 local CONTENT_INSET = 8
 local SECTION_GAP = 10
 local SLIDER_GAP = 8
-local PARAGRAPH_GAP = 4
-local REAGENT_ICON, REAGENT_ICON_CROP = 28, 0.08
-local REAGENT_TEXT_GAP, REAGENT_SWITCH_GAP = 10, 12
-local REAGENT_DETAIL_GAP, REAGENT_ROW_GAP = 3, 12
-local REAGENT_SLIDER_GAP = 6
-local SWITCH_WIDTH, SWITCH_HEIGHT = 26, 14
+local PARAGRAPH_GAP = 6
+local LIST_GAP, REAGENT_GAP = 14, 14
+local HEAD_HEIGHT, ICON_SIZE, ICON_TEXT_GAP = 36, 30, 10
+local FORM_INDENT = ICON_SIZE + ICON_TEXT_GAP
+local FORM_ROW_HEIGHT, FORM_TOP_GAP, FORM_LABEL_GAP = 26, 4, 8
+local FORM_SLIDER_WIDTH = 180
+local ICON_BACK = { 0, 0, 0, 0.7 }
+local ICON_CROP = 0.08
 local STOCK_MAX_FLOOR = 40
 local STOCK_MAX_STACKS = 2
 local ICON_SIZE_MIN, ICON_SIZE_MAX = 24, 64
@@ -80,8 +84,8 @@ local function AddHeading(page, key)
     return page.stack:Add(W.Heading(page.content, PAGE_WIDTH, key), #page.stack.frames > 0 and SECTION_GAP or 0)
 end
 
-local function AddParagraph(page, key, gap)
-    return page.stack:Add(W.Paragraph(page.content, PAGE_WIDTH, key), gap or PARAGRAPH_GAP)
+local function AddParagraph(page, key)
+    return page.stack:Add(W.Paragraph(page.content, PAGE_WIDTH, key), PARAGRAPH_GAP)
 end
 
 local function AddLiveText(page, build, color, gap)
@@ -131,12 +135,20 @@ local function StockMax(entry)
     return math.max(STOCK_MAX_FLOOR, entry.stock * STOCK_MAX_STACKS)
 end
 
+local function DetailText(entry)
+    local used = Catalog.UsedBy(entry)
+    if entry.forTop then return used end
+    return string.format(L.LOWER_RANK_ONLY, used)
+end
+
 local function ShowReagentTooltip(head)
-    local entry = head.row.entry
+    local row = head.row
     GameTooltip:SetOwner(head, "ANCHOR_RIGHT")
-    GameTooltip:SetItemByID(entry.item)
-    GameTooltip:AddLine(" ")
-    GameTooltip:AddLine(L[Catalog.IsTracked(entry) and "REAGENT_CLICK_OFF" or "REAGENT_CLICK_ON"], C.muted[1], C.muted[2], C.muted[3], true)
+    GameTooltip:SetItemByID(row.entry.item)
+    if row.status:IsTruncated() then
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine(DetailText(row.entry), C.muted[1], C.muted[2], C.muted[3], true)
+    end
     GameTooltip:Show()
 end
 
@@ -144,28 +156,28 @@ local function CreateReagentHead(row)
     local head = CreateFrame("Button", nil, row)
     head:SetPoint("TOPLEFT")
     head:SetPoint("TOPRIGHT")
+    head:SetHeight(HEAD_HEIGHT)
     head.row = row
+    head.UpdateTooltip = ShowReagentTooltip
     W.RowHover(head)
     local back = head:CreateTexture(nil, "ARTWORK")
-    back:SetColorTexture(0, 0, 0, 0.7)
-    back:SetSize(REAGENT_ICON, REAGENT_ICON)
-    back:SetPoint("TOPLEFT")
+    back:SetColorTexture(unpack(ICON_BACK))
+    back:SetSize(ICON_SIZE, ICON_SIZE)
+    back:SetPoint("LEFT")
     row.icon = head:CreateTexture(nil, "OVERLAY")
     row.icon:SetPoint("TOPLEFT", back, 1, -1)
     row.icon:SetPoint("BOTTOMRIGHT", back, -1, 1)
-    row.icon:SetTexCoord(REAGENT_ICON_CROP, 1 - REAGENT_ICON_CROP, REAGENT_ICON_CROP, 1 - REAGENT_ICON_CROP)
+    row.icon:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
     row.switch = W.CreateSwitch(head)
-    row.switch:SetPoint("TOPRIGHT", 0, -(REAGENT_ICON - SWITCH_HEIGHT) / 2)
-    local textWidth = PAGE_WIDTH - REAGENT_ICON - REAGENT_TEXT_GAP - SWITCH_WIDTH - REAGENT_SWITCH_GAP
-    row.name = UI.Text(head, T.body, C.text)
-    row.name:SetPoint("TOPLEFT", back, "TOPRIGHT", REAGENT_TEXT_GAP, 0)
-    row.name:SetWidth(textWidth)
+    row.switch:SetPoint("RIGHT")
+    row.name = UI.BoldText(head, T.body, C.text)
+    row.name:SetPoint("TOPLEFT", back, "TOPRIGHT", ICON_TEXT_GAP, 0)
+    row.name:SetPoint("RIGHT", row.switch, "LEFT", -ICON_TEXT_GAP, 0)
     row.name:SetJustifyH("LEFT")
-    row.detail = UI.Text(head, T.label, C.muted)
-    row.detail:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -REAGENT_DETAIL_GAP)
-    row.detail:SetWidth(textWidth)
-    row.detail:SetWordWrap(true)
-    row.detail:SetJustifyH("LEFT")
+    row.status = UI.Text(head, T.label, C.muted)
+    row.status:SetPoint("BOTTOMLEFT", back, "BOTTOMRIGHT", ICON_TEXT_GAP, 0)
+    row.status:SetPoint("RIGHT", row.switch, "LEFT", -ICON_TEXT_GAP, 0)
+    row.status:SetJustifyH("LEFT")
     head:SetScript("OnClick", function()
         Catalog.SetTracked(row.entry, not Catalog.IsTracked(row.entry))
     end)
@@ -177,7 +189,28 @@ local function CreateReagentHead(row)
         W.SetSwitchHover(row.switch, false)
         W.HideHint(self)
     end)
-    row.head = head
+end
+
+local function CreateStockForm(row)
+    local form = CreateFrame("Frame", nil, row)
+    form:SetSize(PAGE_WIDTH - FORM_INDENT, FORM_ROW_HEIGHT)
+    form:SetPoint("TOPLEFT", FORM_INDENT, -(HEAD_HEIGHT + FORM_TOP_GAP))
+    form:EnableMouse(true)
+    form:SetScript("OnEnter", function(self) W.ShowHint(self, "STOCK_DESC") end)
+    form:SetScript("OnLeave", W.HideHint)
+    row.stockOptions = {
+        min = 0, max = StockMax(row.entry), step = 1,
+        get = function() return Catalog.StockTarget(row.entry) end,
+        set = function(value) Catalog.SetStockTarget(row.entry, value) end,
+    }
+    row.slider = W.Slider(form, FORM_SLIDER_WIDTH, row.stockOptions)
+    row.slider:SetPoint("RIGHT")
+    local label = UI.Text(form, T.label, C.muted)
+    label:SetPoint("LEFT")
+    label:SetPoint("RIGHT", row.slider, "LEFT", -FORM_LABEL_GAP, 0)
+    label:SetJustifyH("LEFT")
+    W.Bind(label, "STOCK")
+    row.form = form
 end
 
 local function CreateReagentRow(list, entry)
@@ -185,41 +218,23 @@ local function CreateReagentRow(list, entry)
     row:SetWidth(PAGE_WIDTH)
     row.entry = entry
     CreateReagentHead(row)
-    row.stockOptions = {
-        label = "STOCK", min = 0, max = StockMax(entry), step = 1,
-        get = function() return Catalog.StockTarget(row.entry) end,
-        set = function(value) Catalog.SetStockTarget(row.entry, value) end,
-    }
-    local indent = REAGENT_ICON + REAGENT_TEXT_GAP
-    row.slider = W.Slider(row, PAGE_WIDTH - indent, row.stockOptions)
-    row.slider:SetPoint("TOPLEFT", row.head, "BOTTOMLEFT", indent, -REAGENT_SLIDER_GAP)
+    CreateStockForm(row)
     return row
-end
-
-local function DetailText(entry)
-    local used = Catalog.UsedBy(entry)
-    if entry.forTop then return used end
-    return string.format(L.LOWER_RANK_ONLY, used)
 end
 
 local function PaintReagentRow(row, animate)
     local entry = row.entry
     local tracked = Catalog.IsTracked(entry)
     row.icon:SetTexture(Catalog.Icon(entry))
-    row.icon:SetDesaturated(not tracked)
+    row.icon:SetDesaturated(not tracked or Inventory.Count(entry.item) == 0)
     row.name:SetText(Catalog.Name(entry))
     row.name:SetTextColor(unpack(tracked and C.text or C.muted))
-    row.detail:SetText(DetailText(entry))
+    row.status:SetText(DetailText(entry))
     W.SetSwitch(row.switch, tracked, animate)
-    local headHeight = math.max(REAGENT_ICON,
-        math.ceil(row.name:GetStringHeight() + REAGENT_DETAIL_GAP + row.detail:GetStringHeight()))
-    row.head:SetHeight(headHeight)
     row.stockOptions.max = StockMax(entry)
-    row.slider:SetShown(tracked)
+    row.form:SetShown(tracked)
     row.slider:Refresh()
-    local height = headHeight
-    if tracked then height = height + REAGENT_SLIDER_GAP + row.slider:GetHeight() end
-    row:SetHeight(height)
+    row:SetHeight(tracked and HEAD_HEIGHT + FORM_TOP_GAP + FORM_ROW_HEIGHT or HEAD_HEIGHT)
 end
 
 local function AddReagentList(page)
@@ -240,16 +255,16 @@ local function AddReagentList(page)
             row:ClearAllPoints()
             row:SetPoint("TOPLEFT", 0, -y)
             row:Show()
-            y = y + row:GetHeight() + REAGENT_ROW_GAP
+            y = y + row:GetHeight() + REAGENT_GAP
         end
         for index = #Catalog.listed + 1, #self.rows do
             self.rows[index]:Hide()
         end
         self:SetShown(#Catalog.listed > 0)
-        self:SetHeight(math.max(1, y - REAGENT_ROW_GAP))
+        self:SetHeight(math.max(1, y - REAGENT_GAP))
     end
     list:Refresh(false)
-    page.stack:Add(Track(page, list), PARAGRAPH_GAP)
+    page.stack:Add(Track(page, list), LIST_GAP)
 end
 
 local function EmptyText()
@@ -258,7 +273,7 @@ local function EmptyText()
 end
 
 local function AddEmptyText(page)
-    local empty = AddLiveText(page, EmptyText, C.text, PARAGRAPH_GAP)
+    local empty = AddLiveText(page, EmptyText, C.text, LIST_GAP)
     local paint = empty.Refresh
     function empty:Refresh()
         self:SetShown(#Catalog.listed == 0)
@@ -269,14 +284,10 @@ end
 
 local function BuildReagents()
     local page = NewPage("reagents")
-    AddHeading(page, "SECTION_WHICH")
     AddToggle(page, "knownOnly", "KNOWN_ONLY", "KNOWN_ONLY_DESC")
     AddToggle(page, "lowerRanks", "LOWER_RANKS", "LOWER_RANKS_DESC")
-    AddParagraph(page, "RANKS_EXPLAIN", 6)
-    AddHeading(page, "SECTION_REAGENTS")
     AddEmptyText(page)
     AddReagentList(page)
-    AddParagraph(page, "REAGENTS_EXPLAIN", 8)
 
     local function RefreshIfVisible()
         if IsCurrent(page) then RefreshPage(page, true) end
@@ -285,15 +296,12 @@ local function BuildReagents()
     ns.Listen("RANKS_CHANGED", RefreshIfVisible)
     ns.Listen("NAMES_CHANGED", RefreshIfVisible)
     ns.Listen("STOCK_CHANGED", RefreshIfVisible)
+    ns.Listen("INVENTORY_CHANGED", RefreshIfVisible)
 end
 
 local AUTO = "auto"
 local DOCK_SIDE_GAP, DOCK_TEXT_GAP = 10, 8
 local DOCK_PAGES = { "bank", "vendor" }
-
-local function DockPlacement(slot)
-    return ns.SidePanel.Placement(slot)
-end
 
 local function DockTargets(slot)
     local items = {
@@ -314,16 +322,16 @@ end
 
 local function SetDockTarget(slot, target)
     if target == AUTO then
-        ns.SidePanel.SetPlacement(slot, nil)
+        SidePanel.SetPlacement(slot, nil)
         return
     end
-    local placement = DockPlacement(slot)
-    ns.SidePanel.SetPlacement(slot, target, placement and placement.side or DefaultSide(target))
+    local placement = SidePanel.Placement(slot)
+    SidePanel.SetPlacement(slot, target, placement and placement.side or DefaultSide(target))
 end
 
 local function SetDockSide(slot, side)
-    local placement = DockPlacement(slot)
-    if placement then ns.SidePanel.SetPlacement(slot, placement.target, side) end
+    local placement = SidePanel.Placement(slot)
+    if placement then SidePanel.SetPlacement(slot, placement.target, side) end
 end
 
 local function DockStatus(slot)
@@ -333,10 +341,6 @@ local function DockStatus(slot)
     local text = string.format(L["DOCK_NOW_" .. side], where)
     if takenBy then text = text .. "\n" .. string.format(L.DOCK_TAKEN, takenBy) end
     return text
-end
-
-local function DockFamily(slot)
-    return string.format(L.DOCK_EXPLAIN, table.concat(ns.Dock:Family(slot), ", "))
 end
 
 local function DockSides()
@@ -352,7 +356,7 @@ local function AddDockControls(page, slot)
         label = "DOCK_TARGET",
         items = function() return DockTargets(slot) end,
         get = function()
-            local placement = DockPlacement(slot)
+            local placement = SidePanel.Placement(slot)
             return placement and placement.target or AUTO
         end,
         set = function(target) SetDockTarget(slot, target) end,
@@ -362,7 +366,7 @@ local function AddDockControls(page, slot)
         count = #ns.Dock.SIDES,
         items = DockSides,
         get = function()
-            local placement = DockPlacement(slot)
+            local placement = SidePanel.Placement(slot)
             return placement and placement.side
         end,
         set = function(side) SetDockSide(slot, side) end,
@@ -370,11 +374,10 @@ local function AddDockControls(page, slot)
     local status = AddLiveText(page, function() return DockStatus(slot) end, C.text, DOCK_TEXT_GAP)
     local paintStatus = status.Refresh
     function status:Refresh()
-        sides:SetShown(DockPlacement(slot) ~= nil)
+        sides:SetShown(SidePanel.Placement(slot) ~= nil)
         paintStatus(self)
     end
     status:Refresh()
-    AddLiveText(page, function() return DockFamily(slot) end, C.muted, PARAGRAPH_GAP)
 end
 
 ns.Dock:OnChange(function()
@@ -390,13 +393,11 @@ local function BuildVendor()
     AddToggle(page, "merchant", "VENDOR", "VENDOR_DESC")
     AddToggle(page, "merchantAuto", "VENDOR_AUTO", "VENDOR_AUTO_DESC")
     AddToggle(page, "countBank", "COUNT_BANK", "COUNT_BANK_DESC")
-    AddParagraph(page, "VENDOR_EXPLAIN", 6)
 
     AddHeading(page, "SECTION_PLACEMENT")
     AddDockControls(page, "merchant")
     AddSlider(page, "merchantX", "OFFSET_X", -PANEL_OFFSET, PANEL_OFFSET)
     AddSlider(page, "merchantY", "OFFSET_Y", -PANEL_OFFSET, PANEL_OFFSET)
-    AddParagraph(page, "VENDOR_OFFSET_EXPLAIN", 6)
 end
 
 local function BuildBank()
@@ -409,7 +410,6 @@ local function BuildBank()
     AddDockControls(page, "bank")
     AddSlider(page, "bankX", "OFFSET_X", -PANEL_OFFSET, PANEL_OFFSET)
     AddSlider(page, "bankY", "OFFSET_Y", -PANEL_OFFSET, PANEL_OFFSET)
-    AddParagraph(page, "BANK_OFFSET_EXPLAIN", 6)
 end
 
 local VISIBILITY_MODES = {
@@ -461,7 +461,7 @@ local function BuildPanel()
     local page = NewPage("panel")
     AddHeading(page, "SECTION_WHEN")
     AddSegmented(page, "visibility", "VISIBILITY", VISIBILITY_MODES)
-    AddParagraph(page, "VISIBILITY_EXPLAIN", 6)
+    AddParagraph(page, "VISIBILITY_EXPLAIN")
     AddToggle(page, "showEmpty", "SHOW_EMPTY", "SHOW_EMPTY_DESC")
 
     AddHeading(page, "SECTION_LOOK")
@@ -471,7 +471,6 @@ local function BuildPanel()
     AddToggle(page, "showHeader", "SHOW_HEADER", "SHOW_HEADER_DESC")
     AddToggle(page, "showCounts", "SHOW_COUNTS", "SHOW_COUNTS_DESC")
     AddToggle(page, "locked", "LOCKED", "LOCKED_DESC")
-    AddParagraph(page, "MOVE_EXPLAIN", 6)
     AddRecenterButton(page)
 
     AddHeading(page, "SECTION_BACKGROUND")
@@ -480,7 +479,7 @@ local function BuildPanel()
 
     AddHeading(page, "SECTION_OTHER")
     page.stack:Add(Track(page, W.Toggle(page.content, PAGE_WIDTH, {
-        label = "MINIMAP_BUTTON", desc = "MINIMAP_BUTTON_DESC",
+        label = "MINIMAP_BUTTON",
         get = function() return not ns.db.minimap.hide end,
         set = ns.MinimapButton.SetShown,
     })))

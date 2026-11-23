@@ -11,10 +11,6 @@ local HOSTS = { "MerchantFrame" }
 
 local panel
 
-local function RowItem(entry)
-    return entry.item
-end
-
 local function Detail(entry)
     local status = entry.status
     if status == Merchant.BUYING then return L.AH_BUYING, C.accent end
@@ -27,7 +23,7 @@ local function Detail(entry)
 end
 
 local function CreateRow(owner)
-    return SidePanel.NewRow(owner, Merchant.Buy, RowItem)
+    return SidePanel.NewRow(owner, Merchant.Buy)
 end
 
 local function PaintRow(row)
@@ -58,7 +54,6 @@ local function Create()
         title = "VENDOR_TITLE",
         empty = "VENDOR_EMPTY",
         onAction = function() Merchant.BuyAll() end,
-        actionHint = "VENDOR_BUY_ALL_DESC",
         toggles = {
             { key = "merchantAuto", label = "VENDOR_AUTO", desc = "VENDOR_AUTO_DESC" },
             { key = "countBank", label = "COUNT_BANK", desc = "COUNT_BANK_DESC" },
